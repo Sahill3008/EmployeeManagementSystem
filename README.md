@@ -1,7 +1,4 @@
-# MASTER INTERVIEW GUIDE: Employee Management System
-## Servlet + JSP + Hibernate (JPA) + PostgreSQL
 
----
 
 ## 1. PROJECT SUMMARY
 **Project Name**: Employee Management System

@@ -8,6 +8,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
@@ -66,6 +67,17 @@ public class EmployeeServlet extends HttpServlet {
 
     private void listEmployees(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         List<Employee> listEmployee = employeeDAO.findAll();
+
+        // Basic Search Functionality
+        String searchTerm = req.getParameter("searchTerm");
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            String lowerTerm = searchTerm.toLowerCase();
+            listEmployee = listEmployee.stream()
+                    .filter(e -> e.getName().toLowerCase().contains(lowerTerm) ||
+                            e.getDepartment().toLowerCase().contains(lowerTerm))
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
         req.setAttribute("listEmployee", listEmployee);
         req.getRequestDispatcher("listEmployees.jsp").forward(req, resp);
     }
@@ -76,6 +88,17 @@ public class EmployeeServlet extends HttpServlet {
 
     private void showEditForm(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long id = Long.parseLong(req.getParameter("id"));
+
+        // Profile Editing Restriction
+        HttpSession session = req.getSession(false);
+        String role = (String) session.getAttribute("ROLE");
+        Long sessionId = (Long) session.getAttribute("ID");
+
+        if ("EMPLOYEE".equals(role) && sessionId != null && !sessionId.equals(id)) {
+            resp.sendRedirect("error.jsp");
+            return;
+        }
+
         Employee existingEmployee = employeeDAO.findById(id);
         req.setAttribute("employee", existingEmployee);
         req.getRequestDispatcher("editEmployee.jsp").forward(req, resp);

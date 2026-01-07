@@ -16,9 +16,17 @@ public class LoginServlet extends HttpServlet {
         String u = req.getParameter("username");
         String p = req.getParameter("password");
 
-        if ("admin".equals(u) && "admin".equals(p)) {
+        // Hard-coded role assignment for Interview purposes
+        if ("admin".equals(u) && "admin123".equals(p)) {
             HttpSession session = req.getSession();
             session.setAttribute("user", u);
+            session.setAttribute("ROLE", "ADMIN"); // Admin Role
+            resp.sendRedirect("employees?action=list");
+        } else if ("user".equals(u) && "user123".equals(p)) {
+            HttpSession session = req.getSession();
+            session.setAttribute("user", u);
+            session.setAttribute("ROLE", "EMPLOYEE"); // Employee Role
+            session.setAttribute("ID", 1L); // Mock ID for Employee (Mapped to ID 1)
             resp.sendRedirect("employees?action=list");
         } else {
             req.setAttribute("error", "Invalid Credentials");

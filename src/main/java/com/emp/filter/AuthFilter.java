@@ -29,6 +29,17 @@ public class AuthFilter implements Filter {
         boolean isStaticResource = req.getRequestURI().endsWith(".css") || req.getRequestURI().endsWith(".js");
 
         if (loggedIn || loginRequest || loginServletRequest || isStaticResource) {
+            // Role-Based Access Control (RBAC) Check
+            if (loggedIn) {
+                String action = req.getParameter("action");
+                String role = (String) session.getAttribute("ROLE");
+
+                // Restrict DELETE action to ADMIN users only
+                if ("delete".equals(action) && "EMPLOYEE".equals(role)) {
+                    res.sendRedirect(req.getContextPath() + "/error.jsp");
+                    return;
+                }
+            }
             chain.doFilter(request, response);
         } else {
             res.sendRedirect(loginURI);

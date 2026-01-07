@@ -10,6 +10,11 @@ import java.util.List;
 
 public class EmployeeDAO {
 
+    // Conceptual Caching Layer (Interview Safe)
+    // Acts as a simple second-level cache replacement for demonstration.
+    // In production, use EhCache or Redis.
+    private static final java.util.Map<Long, Employee> cache = new java.util.concurrent.ConcurrentHashMap<>();
+
     public void save(Employee employee) {
         EntityManager em = EntityManagerFactoryProvider.getEntityManagerFactory().createEntityManager();
         EntityTransaction tx = em.getTransaction();
@@ -17,6 +22,10 @@ public class EmployeeDAO {
             tx.begin();
             em.persist(employee);
             tx.commit();
+            // Optional: Populate cache on save
+            if (employee.getId() != null) {
+                cache.put(employee.getId(), employee);
+            }
         } catch (Exception e) {
             if (tx.isActive())
                 tx.rollback();
@@ -33,6 +42,8 @@ public class EmployeeDAO {
             tx.begin();
             em.merge(employee);
             tx.commit();
+            // Invalidate/Update cache
+            cache.put(employee.getId(), employee);
         } catch (Exception e) {
             if (tx.isActive())
                 tx.rollback();
@@ -52,6 +63,8 @@ public class EmployeeDAO {
                 em.remove(employee);
             }
             tx.commit();
+            // Invalidate cache
+            cache.remove(id);
         } catch (Exception e) {
             if (tx.isActive())
                 tx.rollback();
@@ -62,9 +75,19 @@ public class EmployeeDAO {
     }
 
     public Employee findById(Long id) {
+        // Check Cache First
+        if (cache.containsKey(id)) {
+            System.out.println("Fetching from Conceptual Cache: " + id);
+            return cache.get(id);
+        }
+
         EntityManager em = EntityManagerFactoryProvider.getEntityManagerFactory().createEntityManager();
         try {
-            return em.find(Employee.class, id);
+            Employee employee = em.find(Employee.class, id);
+            if (employee != null) {
+                cache.put(id, employee); // Populate Cache
+            }
+            return employee;
         } finally {
             em.close();
         }
